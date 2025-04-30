@@ -1,17 +1,86 @@
 <IfModule mod_rewrite.c>
     RewriteEngine On
+
+    # Force HTTPS
+    RewriteCond %{HTTPS} !=on
+    RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+
+    # Front Controller Pattern
     RewriteCond %{REQUEST_FILENAME} !-f
     RewriteCond %{REQUEST_FILENAME} !-d
-    RewriteRule ^ index.php [QSA,L]
-    
-    # Security headers
+    RewriteRule ^ index.php [L]
+
+    # Security Headers
     Header set X-Content-Type-Options "nosniff"
     Header set X-Frame-Options "DENY"
-    Header set Content-Security-Policy "default-src 'self'"
+    Header set Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline'"
+    Header set X-XSS-Protection "1; mode=block"
+    Header set Referrer-Policy "strict-origin-when-cross-origin"
+    Header set Permissions-Policy "geolocation=(), microphone=(), camera=()"
+    Header always set Strict-Transport-Security "max-age=63072000; includeSubDomains"
 </IfModule>
 
+# Disable directory listing
 Options -Indexes
 
-<FilesMatch "(users\.json|error\.log|composer\.(json|lock))">
+# Prevent access to sensitive files
+<FilesMatch "\.(env|json|log|lock|key|ini|htaccess)$">
     Require all denied
 </FilesMatch>
+
+# Custom error documents
+ErrorDocument 403 /error/403
+ErrorDocument 404 /error/404
+ErrorDocument 500 /error/500
+
+# Compression
+<IfModule mod_deflate.c>
+    AddOutputFilterByType DEFLATE text/html
+    AddOutputFilterByType DEFLATE text/css
+    AddOutputFilterByType DEFLATE text/javascript
+    AddOutputFilterByType DEFLATE application/javascript
+    AddOutputFilterByType DEFLATE application/json
+</IfModule>
+
+# Cache control
+<IfModule mod_expires.c>
+    ExpiresActive On
+    ExpiresByType image/jpg "access plus 1 year"
+    ExpiresByType image/jpeg "access plus 1 year"
+    ExpiresByType image/gif "access plus 1 year"
+    ExpiresByType image/png "access plus 1 year"
+    ExpiresByType text/css "access plus 1 month"
+    ExpiresByType application/pdf "access plus 1 month"
+    ExpiresByType text/x-javascript "access plus 1 month"
+    ExpiresByType application/x-shockwave-flash "access plus 1 month"
+    ExpiresByType image/x-icon "access plus 1 year"
+    ExpiresDefault "access plus 2 days"
+</IfModule>
+
+# Character encoding
+AddDefaultCharset UTF-8
+
+# Disable server signature
+ServerSignature Off
+
+# Prevent MIME type sniffing
+<IfModule mod_headers.c>
+    Header set X-Content-Type-Options "nosniff"
+</IfModule>
+
+# File access restrictions
+<Files .htaccess>
+    Require all denied
+</Files>
+
+<FilesMatch "^users\.json$">
+    Require all denied
+</FilesMatch>
+
+<FilesMatch "^error\.log$">
+    Require all denied
+</FilesMatch>
+
+# Disable ETags
+FileETag None
+Header unset ETag
