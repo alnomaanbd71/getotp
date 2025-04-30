@@ -1,0 +1,9 @@
+{
+    "name": "sojibx/otp-bot",
+    "require": {
+        "php": "^8.1",
+        "ext-curl": "*",
+        "ext-json": "*",
+        "longman/telegram-bot": "^3.2"
+    }
+}
